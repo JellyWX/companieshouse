@@ -1,7 +1,10 @@
+from .company import Company
+from .officer import Officer
+
 class SearchResults():
     def __init__(self, query):
         self.query = query
-        self.result_count = -1
+        self.result_count = 0
         self.items_per_page = 20
         self.current_page = 0
 
@@ -15,7 +18,7 @@ class SearchResults():
         self.officers.append(officer)
 
     @staticmethod
-    def from_first_page(query, result_count, items_per_page, search_results):
+    def from_first_page(query, result_count, items_per_page, search_results) -> 'SearchResults':
         s = SearchResults(query)
 
         s.result_count = result_count
@@ -24,7 +27,9 @@ class SearchResults():
 
         for item in search_results:
             if item['kind'] == 'searchresults#company':
-                s._add_company(Company(item))
+                s._add_company(Company(**item))
 
             else:
-                s._add_officer(Officer(item))
+                s._add_officer(Officer(**item))
+
+        return s
