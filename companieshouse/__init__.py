@@ -1,7 +1,7 @@
 from enum import IntEnum
 import requests
 from typing import Optional
-from .search_result import SearchResults
+from .search_result import SearchResults, Page
 
 __name__ = 'companieshouse'
 __version__ = '0.1'
@@ -59,17 +59,19 @@ class SearchType(IntEnum):
     Officer = 0b10
     All = 0b11
 
+
 # Class to be created for usage in querying API
 class Querier():
 
     def __init__(self, auth_token: str):
         self._auth_token = auth_token
 
-    def new_search(self, query: str) -> SearchResults:
-        return SearchResults(query)
+    # Function performs search query returning new searchresults with one page
+    def create_search(self, query: str, search_type: int=SearchType.All) -> Optional[SearchResults]:
+        pass
 
     # Function turns search query into request, sends request, converts request into search result
-    def search_for(self, query: str, search_type=SearchType.Company | SearchType.Officer, page_size: Optional[int]=None) -> Optional[SearchResults]:
+    def get_search_page(self, query: str, search_type: int=SearchType.All, page) -> Optional[Page]:
 
         def _handle_error(request):
             if request.status_code == 401:
@@ -85,17 +87,14 @@ class Querier():
             elif request.status_code == 500:
                 raise InternalServerError
 
-        def _handle_results(data, query) -> SearchResults:
+        def _handle_results(data) -> Page:
             search_results = data['items']
 
-            print(search_results)
+            #result_count: int = data['total_results']
 
-            result_count: int = data['total_results']
-            items_per_page: int = data['items_per_page']
+            p = Page(search_results)
 
-            s = SearchResults.from_first_page(query, result_count, items_per_page, search_results)
-
-            return s
+            return p
 
         request = requests.get('{}?q={}'.format(Routes.Search[search_type], query), auth=(self._auth_token, ''), headers={'Origin': 'https://local.sender'})
 

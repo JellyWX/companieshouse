@@ -1,35 +1,50 @@
 from .company import Company
 from .officer import Officer
 
-class SearchResults():
-    def __init__(self, query):
-        self.query = query
-        self.result_count = 0
-        self.items_per_page = 20
-        self.current_page = 0
-
-        self.officers = []
-        self.companies = []
-
-    def _add_company(self, company: Company):
-        self.companies.append(company)
-
-    def _add_officer(self, officer: Officer):
-        self.officers.append(officer)
-
-    @staticmethod
-    def from_first_page(query, result_count, items_per_page, search_results) -> 'SearchResults':
-        s = SearchResults(query)
-
-        s.result_count = result_count
-        s.items_per_page = items_per_page
-        s.current_page = 1
+class Page():
+    def __init__(self, search_results):
+        self.entities = []
 
         for item in search_results:
             if item['kind'] == 'searchresults#company':
-                s._add_company(Company(**item))
+                self._add_entity(Company(**item))
 
             else:
-                s._add_officer(Officer(**item))
+                self._add_entity(Officer(**item))
 
-        return s
+    def __getitem__(self, index):
+        return self.entities[index]
+
+    def _add_entity(self, entity):
+        self.entities.append(entity)
+
+
+class Search():
+    def __init__(self, query, query_type, querier):
+        self._PAGE_SIZE = 15
+        self.query = query
+
+        self.pages = {}
+
+    def __getitem__(self, index):
+        page_required, item_required = divmod(index, self._PAGE_SIZE)
+
+        page = self.get_page(page_required)
+
+        return page[item_required]
+
+    def __iter__(self):
+        pass
+
+    def get_page(self, page_number):
+        if self.pages.get(page_number, None) is None:
+            p = self.get_upstream_page(page_number)
+
+            self.pages[page_number] = p
+            return p
+
+        else:
+            return self.pages[page_number]
+
+    def get_upstream_page(self, page_number):
+        pass
