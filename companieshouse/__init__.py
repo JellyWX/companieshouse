@@ -87,14 +87,17 @@ class Querier():
             elif request.status_code == 500:
                 raise InternalServerError
 
-        def _handle_results(data) -> Page:
+            elif request.status_code == 416:
+                return None
+
+        def _handle_results(data) -> (Page, int):
             search_results = data['items']
 
             #result_count: int = data['total_results']
 
             p = Page(search_results)
 
-            return p
+            return p, data['total_results']
 
         request = requests.get('{}?q={}&start_index={}&items_per_page={}'.format(Routes.Search[search_type], query, start_at, page_size), auth=(self._auth_token, ''), headers={'Origin': 'https://local.sender'})
 
@@ -103,5 +106,7 @@ class Querier():
 
         else:
             data = request.json()
+
+            #print(data)
 
             return _handle_results(data)
