@@ -1,16 +1,17 @@
 from .company import Company
 from .officer import Officer
+import logging
 
 class Page():
-    def __init__(self, search_results):
+    def __init__(self, querier, search_results):
         self.entities = []
 
         for item in search_results:
             if item['kind'] == 'searchresults#company':
-                self._add_entity(Company(**item))
+                self._add_entity(Company(querier, **item))
 
             else:
-                self._add_entity(Officer(**item))
+                self._add_entity(Officer(querier, **item))
 
     def __getitem__(self, index):
         if index >= len(self):
@@ -41,7 +42,7 @@ class Search():
         self.iter_head = 0
 
     def __getitem__(self, index):
-        if index >= len(self):
+        if len(self) != 0 and index >= len(self):
             raise IndexError
 
         else:
@@ -56,7 +57,7 @@ class Search():
         return self
 
     def __next__(self):
-        if self.iter_head >= len(self):
+        if len(self) != 0 and self.iter_head >= len(self):
             raise StopIteration
 
         else:
@@ -70,7 +71,7 @@ class Search():
 
     def get_page(self, page_number):
         if self.pages.get(page_number, None) is None:
-            p = self.get_upstream_page(page_number) or Page([])
+            p = self.get_upstream_page(page_number) or Page(None, [])
 
             self.pages[page_number] = p
             return p
@@ -79,10 +80,12 @@ class Search():
             return self.pages[page_number]
 
     def get_upstream_page(self, page_number) -> Page:
+        logging.info('Requesting new search page from upstream')
+
         page, result_count = self.querier.get_search_page(self.query, self.query_type, self._PAGE_SIZE, self._PAGE_SIZE * page_number)
 
         if result_count != self.result_count:
-            print('Results have changed; deleting cache')
+            logging.info('Results have changed; deleting cache')
             # results have changed! delete all existing pages :(
             self.pages = {}
 

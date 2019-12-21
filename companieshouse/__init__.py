@@ -2,6 +2,8 @@ from enum import IntEnum
 import requests
 from typing import Optional
 from .search_result import Search, Page
+from pprint import pformat
+import logging
 
 __name__ = 'companieshouse'
 __version__ = '0.1'
@@ -39,15 +41,27 @@ class Routes():
 
 
 class InternalServerError(Exception):
+    """Exception raised when a 500 error is received
+
+    """
     pass
 
 class InvalidAuthToken(Exception):
+    """Exception raised when the authentication is invalid
+
+    """
     pass
 
 class InvalidIPOrDomain(Exception):
+    """Exception raised due to some other validation failing (403 with no body)
+
+    """
     pass
 
 class BadRequest(Exception):
+    """Exception raised due to bad request (400)
+
+    """
     pass
 
 # IntEnum such that it can be combined through binary OR
@@ -62,51 +76,99 @@ class SearchType(IntEnum):
 
 # Class to be created for usage in querying API
 class Querier():
+    """Represents a querier used for retrieving data from the API and making objects
+
+    """
 
     def __init__(self, auth_token: str):
         self._auth_token = auth_token
 
-    # Function performs search query returning new searchresults with one page
-    def create_search(self, query: str, search_type: int=SearchType.All) -> Optional[Search]:
-        return Search(query, search_type, self)
+    # Deal with an issue with a request
+    @staticmethod
+    def _handle_error(request):
+        logging.debug('Error occured: HTTP {}'.format(request.status_code))
 
-    # Function turns search query into request, sends request, converts request into search result
-    def get_search_page(self, query: str, search_type: int=SearchType.All, page_size: int=15, start_at: int=0) -> Page:
+        if request.status_code == 401:
+            raise BadRequest
 
-        def _handle_error(request):
-            if request.status_code == 401:
-                raise BadRequest
+        elif request.status_code == 403:
+            if request.text == '':
+                raise InvalidIPOrDomain('Either your IP address does not match the IP on your application or you haven\'t added `https://local.sender` as a JavaScript domain')
 
-            elif request.status_code == 403:
-                if request.text == '':
-                    raise InvalidIPOrDomain('Either your IP address does not match the IP on your application or you haven\'t added `https://local.sender` as a JavaScript domain')
+            else:
+                raise InvalidAuthToken
 
-                else:
-                    raise InvalidAuthToken
+        elif request.status_code == 500:
+            raise InternalServerError
 
-            elif request.status_code == 500:
-                raise InternalServerError
+        elif request.status_code == 416:
+            return None
 
-            elif request.status_code == 416:
-                return None
+    def _create_request(self, route, callback):
+        """Internal use only: create and send a request and pass the data either to the error handler or into a callback function
 
-        def _handle_results(data) -> (Page, int):
-            search_results = data['items']
+        """
 
-            #result_count: int = data['total_results']
-
-            p = Page(search_results)
-
-            return p, data['total_results']
-
-        request = requests.get('{}?q={}&start_index={}&items_per_page={}'.format(Routes.Search[search_type], query, start_at, page_size), auth=(self._auth_token, ''), headers={'Origin': 'https://local.sender'})
+        request = requests.get(route, auth=(self._auth_token, ''), headers={'Origin': 'https://local.sender'})
 
         if request.status_code != 200:
-            _handle_error(request)
+            self._handle_error(request)
 
         else:
             data = request.json()
 
-            #print(data)
+            logging.debug('Received the following data: {}'.format(pformat(data)))
 
-            return _handle_results(data)
+            return callback(data)
+
+    # Function performs search query returning new searchresults with one page
+    def create_search(self, query: str, search_type: int=SearchType.All) -> Optional[Search]:
+        """Create a new Search object
+
+        """
+        return Search(query, search_type, self)
+
+    # Function turns search query into request, sends request, converts request into search result
+    def get_search_page(self, query: str, search_type: int=SearchType.All, page_size: int=15, start_at: int=0) -> Optional[Page]:
+        """Internal use only: used to get a Page object
+
+        """
+
+        def _handle_results(data) -> (Page, int):
+            search_results = data['items']
+
+            p = Page(self, search_results)
+
+            return p, data['total_results']
+
+
+        return self._create_request(
+
+            '{}?q={}&start_index={}&items_per_page={}'.format(
+                    Routes.Search[search_type],
+                    query,
+                    start_at,
+                    page_size,
+                    ),
+
+            _handle_results
+            )
+
+    # Get more details regarding a company
+    def get_company(self, company_id):
+        """Internal use only: used to get a company object
+
+        """
+
+        def _handle_results(data) -> None:
+            print(data)
+
+        return self._create_request(
+
+            '{}/{}'.format(
+                Routes.Company.Get,
+                company_id,
+                ),
+
+            _handle_results
+            )

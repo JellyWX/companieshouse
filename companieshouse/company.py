@@ -40,7 +40,7 @@ class CompanyStatus(Enum):
 
 
 class Company():
-    def __init__(self,
+    def __init__(self, querier,
         title=None, # title of company
         date_of_creation=None, # date company was formed
         company_number=None, # uid for company
@@ -49,6 +49,8 @@ class Company():
         address=None, # registered company address
         **kwargs # disregard the other arguments (they're mostly useless)
         ):
+
+        self.querier = querier
 
         self.title = title
         self.date_of_creation = datetime.strptime(date_of_creation, '%Y-%m-%d')
@@ -61,3 +63,6 @@ class Company():
 
         else:
             self.address = Address(**address)
+
+    def get_all_details(self):
+        self.querier.get_company(self.company_id)
