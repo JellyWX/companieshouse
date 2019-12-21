@@ -31,6 +31,7 @@ class Company():
         **kwargs # disregard the other arguments (they're mostly useless)
         ):
 
+        self.title = title
         self.date_of_creation = datetime.strptime(date_of_creation, '%Y-%m-%d')
         self.company_id = company_number
         self.company_status = company_status_map[company_status]

@@ -1,7 +1,7 @@
 from enum import IntEnum
 import requests
 from typing import Optional
-from .search_result import SearchResults, Page
+from .search_result import Search, Page
 
 __name__ = 'companieshouse'
 __version__ = '0.1'
@@ -67,11 +67,11 @@ class Querier():
         self._auth_token = auth_token
 
     # Function performs search query returning new searchresults with one page
-    def create_search(self, query: str, search_type: int=SearchType.All) -> Optional[SearchResults]:
-        pass
+    def create_search(self, query: str, search_type: int=SearchType.All) -> Optional[Search]:
+        return Search(query, search_type, self)
 
     # Function turns search query into request, sends request, converts request into search result
-    def get_search_page(self, query: str, search_type: int=SearchType.All, page) -> Optional[Page]:
+    def get_search_page(self, query: str, search_type: int=SearchType.All, page_size: int=15, start_at: int=0) -> Page:
 
         def _handle_error(request):
             if request.status_code == 401:
@@ -96,7 +96,7 @@ class Querier():
 
             return p
 
-        request = requests.get('{}?q={}'.format(Routes.Search[search_type], query), auth=(self._auth_token, ''), headers={'Origin': 'https://local.sender'})
+        request = requests.get('{}?q={}&start_index={}&items_per_page={}'.format(Routes.Search[search_type], query, start_at, page_size), auth=(self._auth_token, ''), headers={'Origin': 'https://local.sender'})
 
         if request.status_code != 200:
             _handle_error(request)

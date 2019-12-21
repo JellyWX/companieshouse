@@ -23,6 +23,8 @@ class Search():
     def __init__(self, query, query_type, querier):
         self._PAGE_SIZE = 15
         self.query = query
+        self.query_type = query_type
+        self.querier = querier
 
         self.pages = {}
 
@@ -46,5 +48,6 @@ class Search():
         else:
             return self.pages[page_number]
 
-    def get_upstream_page(self, page_number):
-        pass
+    def get_upstream_page(self, page_number) -> Page:
+        return self.querier.get_search_page(self.query, self.query_type, self._PAGE_SIZE, self._PAGE_SIZE * page_number)
+
