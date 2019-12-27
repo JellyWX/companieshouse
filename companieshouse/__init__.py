@@ -17,25 +17,7 @@ class Routes():
 
     """
 
-    class MetaSearch(type):
-
-        class InvalidSearchType(Exception):
-            pass
-
-        All = BASE_URI + '/search'
-        Company = BASE_URI + '/search/companies'
-        Officer = BASE_URI + '/search/officers'
-
-        @classmethod
-        def __getitem__(cls, index):
-            if isinstance(index, int) and 1 <= index <= 3:
-                return (cls.Company, cls.Officer, cls.All)[index - 1]
-
-            else:
-                raise InvalidSearchType
-
-    class Search(object, metaclass=MetaSearch):
-        pass
+    Search = BASE_URI + '/search/companies'
 
     class Company():
 
@@ -71,16 +53,6 @@ class BadRequest(Exception):
 
     """
     pass
-
-# IntEnum such that it can be combined through binary OR
-class SearchType(IntEnum):
-    """Used for specifying the types of entities you wish to query
-
-    """
-    Company = 0b01
-    Officer = 0b10
-    All = 0b11
-
 
 # Class to be created for usage in querying API
 class Querier():
@@ -130,14 +102,14 @@ class Querier():
             return callback(data)
 
     # Function performs search query returning new searchresults with one page
-    def create_search(self, query: str, search_type: int=SearchType.All) -> Optional[Search]:
+    def create_search(self, query: str) -> Optional[Search]:
         """Create a new Search object
 
         """
-        return Search(query, search_type, self)
+        return Search(query, self)
 
     # Function turns search query into request, sends request, converts request into search result
-    def get_search_page(self, query: str, search_type: int=SearchType.All, page_size: int=15, start_at: int=0) -> Optional[Page]:
+    def get_search_page(self, query: str, page_size: int=15, start_at: int=0) -> Optional[Page]:
         """Internal use only: used to get a Page object
 
         """
@@ -153,7 +125,7 @@ class Querier():
         return self._create_request(
 
             '{}?q={}&start_index={}&items_per_page={}'.format(
-                    Routes.Search[search_type],
+                    Routes.Search,
                     query,
                     start_at,
                     page_size,

@@ -5,11 +5,7 @@ class Page():
         self.entities = []
 
         for item in search_results:
-            if item['kind'] == 'searchresults#company':
-                self._add_entity(Company(querier, **item))
-
-            else:
-                self._add_entity(Officer(querier, **item))
+            self._add_entity(Company(querier, **item))
 
     def __getitem__(self, index):
         if index >= len(self):
@@ -34,13 +30,12 @@ class OfficerListPage(Page):
 
 
 class Search():
-    def __init__(self, query, query_type, querier):
+    def __init__(self, query, querier):
         self._PAGE_SIZE = 15
 
         self.result_count = 0
 
         self.query = query
-        self.query_type = query_type
         self.querier = querier
 
         self.pages = {}
@@ -88,7 +83,7 @@ class Search():
     def _get_upstream_page(self, page_number) -> Page:
         logging.info('Requesting new search page from upstream')
 
-        page, result_count = self.querier.get_search_page(self.query, self.query_type, self._PAGE_SIZE, self._PAGE_SIZE * page_number)
+        page, result_count = self.querier.get_search_page(self.query, self._PAGE_SIZE, self._PAGE_SIZE * page_number)
 
         self._validate_result_count(result_count)
 
