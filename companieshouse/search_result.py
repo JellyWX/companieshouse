@@ -1,7 +1,7 @@
 import logging
 
 class Page():
-    def __init__(self, querier, search_results):
+    def __init__(self, search_results):
         self.entities = []
 
         for item in search_results:
@@ -22,7 +22,7 @@ class Page():
 
 
 class OfficerListPage(Page):
-    def __init__(self, querier, search_results):
+    def __init__(self, search_results):
         self.entities = []
 
         for item in search_results:
@@ -72,7 +72,7 @@ class Search():
 
     def get_page(self, page_number):
         if self.pages.get(page_number, None) is None:
-            p = self._get_upstream_page(page_number) or Page(None, [])
+            p = self._get_upstream_page(page_number) or Page([])
 
             self.pages[page_number] = p
             return p

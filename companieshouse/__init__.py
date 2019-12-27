@@ -117,7 +117,7 @@ class Querier():
         def _handle_results(data) -> (Page, int):
             search_results = data['items']
 
-            p = Page(self, search_results)
+            p = Page(search_results)
 
             return p, data['total_results']
 
@@ -141,7 +141,7 @@ class Querier():
 
             search_results = data['items']
 
-            p = OfficerListPage(self, search_results)
+            p = OfficerListPage(search_results)
 
             return p, data['total_results']
 
