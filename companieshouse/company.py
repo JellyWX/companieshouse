@@ -1,4 +1,5 @@
 from .address import Address
+from .search_result import OfficerList
 
 from datetime import datetime
 from enum import Enum
@@ -57,6 +58,8 @@ class Company():
         self.company_id = company_number
         self.company_status = CompanyStatus.from_string(company_status)
         self.company_type = CompanyType.from_string(company_type)
+
+        self.officers = OfficerList(self, querier)
 
         if address.get('locality') == 'Refer To Parent Registry':
             self.address = Address()

@@ -1,5 +1,3 @@
-from .company import Company
-from .officer import Officer
 import logging
 
 class Page():
@@ -25,6 +23,14 @@ class Page():
 
     def _add_entity(self, entity):
         self.entities.append(entity)
+
+
+class OfficerListPage(Page):
+    def __init__(self, querier, search_results):
+        self.entities = []
+
+        for item in search_results:
+            self._add_entity(Officer(querier, **item))
 
 
 class Search():
@@ -71,7 +77,7 @@ class Search():
 
     def get_page(self, page_number):
         if self.pages.get(page_number, None) is None:
-            p = self.get_upstream_page(page_number) or Page(None, [])
+            p = self._get_upstream_page(page_number) or Page(None, [])
 
             self.pages[page_number] = p
             return p
@@ -79,16 +85,45 @@ class Search():
         else:
             return self.pages[page_number]
 
-    def get_upstream_page(self, page_number) -> Page:
+    def _get_upstream_page(self, page_number) -> Page:
         logging.info('Requesting new search page from upstream')
 
         page, result_count = self.querier.get_search_page(self.query, self.query_type, self._PAGE_SIZE, self._PAGE_SIZE * page_number)
 
+        self._validate_result_count(result_count)
+
+        return page
+
+    def _validate_result_count(self, result_count):
+
         if result_count != self.result_count:
             logging.info('Results have changed; deleting cache')
-            # results have changed! delete all existing pages :(
             self.pages = {}
 
         self.result_count = result_count
 
+
+class OfficerList(Search):
+    def __init__(self, company, querier):
+        self._PAGE_SIZE = 15
+
+        self.result_count = 0
+
+        self.company = company
+        self.querier = querier
+
+        self.pages = {}
+
+        self.iter_head = 0
+
+    def _get_upstream_page(self, page_number) -> Page:
+        logging.info('Requesting new page of officers from upstream')
+
+        page, result_count = self.querier.get_officer_list_page(self.company.company_id, self._PAGE_SIZE, self._PAGE_SIZE * page_number)
+
+        self._validate_result_count(result_count)
+
         return page
+
+from .company import Company
+from .officer import Officer

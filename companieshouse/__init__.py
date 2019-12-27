@@ -1,7 +1,7 @@
 from enum import IntEnum
 import requests
 from typing import Optional
-from .search_result import Search, Page
+from .search_result import Search, Page, OfficerListPage
 from pprint import pformat
 import logging
 
@@ -18,6 +18,7 @@ class Routes():
     """
 
     class MetaSearch(type):
+
         class InvalidSearchType(Exception):
             pass
 
@@ -37,7 +38,14 @@ class Routes():
         pass
 
     class Company():
-        Get = BASE_URI + '/company'
+
+        @staticmethod
+        def Get(c):
+            return BASE_URI + '/company/{}'.format(c)
+
+        @staticmethod
+        def Officers(c):
+            return BASE_URI + '/company/{}/officers'.format(c)
 
 
 class InternalServerError(Exception):
@@ -152,6 +160,29 @@ class Querier():
                     ),
 
             _handle_results
+
+            )
+
+    def get_officer_list_page(self, company_id: str, page_size: int=15, start_at: int=0) -> Optional[Page]:
+
+        def _handle_resp(data) -> (Page, int):
+
+            search_results = data['items']
+
+            p = OfficerListPage(self, search_results)
+
+            return p, data['total_results']
+
+        return self._create_request(
+
+            '{}?start_index={}&items_per_page={}'.format(
+                    Routes.Company.Officers(company_id),
+                    start_at,
+                    page_size,
+                    ),
+
+            _handle_resp
+
             )
 
     # Get more details regarding a company
@@ -165,10 +196,7 @@ class Querier():
 
         return self._create_request(
 
-            '{}/{}'.format(
-                Routes.Company.Get,
-                company_id,
-                ),
-
+            Routes.Company.Get(company_id),
             _handle_results
+
             )
