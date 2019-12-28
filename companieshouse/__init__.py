@@ -54,6 +54,9 @@ class BadRequest(Exception):
     """
     pass
 
+class UnknownError(Exception):
+    pass
+
 # Class to be created for usage in querying API
 class Querier():
     """Represents a querier used for retrieving data from the API and making objects
@@ -83,6 +86,9 @@ class Querier():
 
         elif request.status_code == 416:
             return None
+
+        else:
+            raise UnknownError('Another error occured: HTTP Error {}: {}'.format(request.status_code, request.text))
 
     def _create_request(self, route, callback):
         """Internal use only: create and send a request and pass the data either to the error handler or into a callback function
@@ -117,10 +123,9 @@ class Querier():
         def _handle_results(data) -> (Page, int):
             search_results = data['items']
 
-            p = Page(search_results)
+            p = Page(self, search_results)
 
             return p, data['total_results']
-
 
         return self._create_request(
 
@@ -141,7 +146,7 @@ class Querier():
 
             search_results = data['items']
 
-            p = OfficerListPage(search_results)
+            p = OfficerListPage(self, search_results)
 
             return p, data['total_results']
 
