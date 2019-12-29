@@ -1,9 +1,11 @@
 from enum import IntEnum
 import requests
 from typing import Optional
-from .search_result import Search, Page, OfficerListPage
 from pprint import pformat
 import logging
+
+from .search_result import Search, Page, OfficerListPage
+from .cache import Cache
 
 __name__ = 'companieshouse'
 __version__ = '0.1'
@@ -65,6 +67,7 @@ class Querier():
 
     def __init__(self, auth_token: str):
         self._auth_token = auth_token
+        self.cache = Cache()
 
     # Deal with an issue with a request
     @staticmethod

@@ -5,7 +5,10 @@ class Page():
         self.entities = []
 
         for item in search_results:
-            self._add_entity(Company(querier, **item))
+            c = Company(querier, **item)
+
+            querier.cache.put_company(c)
+            self._add_entity(c.company_id)
 
     def __getitem__(self, index):
         if index >= len(self):
@@ -26,7 +29,10 @@ class OfficerListPage(Page):
         self.entities = []
 
         for item in search_results:
-            self._add_entity(Officer(querier, **item))
+            o = Officer(querier, **item)
+
+            querier.cache.put_officer(o)
+            self._add_entity(o.officer_id)
 
 
 class Search():

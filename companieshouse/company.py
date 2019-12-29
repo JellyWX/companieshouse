@@ -39,6 +39,13 @@ class CompanyStatus(Enum):
 
         return company_status_map[t]
 
+class CompanyRef():
+    def __init__(self, cache, num):
+        self.cache = cache
+        self.company_id = num
+
+    def r(self):
+        return self.cache.retrieve_company(self.company_id)
 
 class Company():
     def __init__(self, querier,
