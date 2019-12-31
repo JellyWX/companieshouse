@@ -4,7 +4,7 @@ class Officer():
     def __init__(self, querier,
         name=None,
         address=None,
-        ,
+        links=None,
         **kwargs,
         ):
 
@@ -13,4 +13,6 @@ class Officer():
         self.name = name
         self.address = Address(**address)
 
-        self.officer_id = 
+        self.officer_id = links['officer']['appointments'][len('/officers/'):-len('/appointments')]
+
+        self.appointments = AppointmentList(self.querier)

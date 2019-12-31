@@ -8,7 +8,7 @@ class Page():
             c = Company(querier, **item)
 
             querier.cache.put_company(c)
-            self._add_entity(c.company_id)
+            self._add_entity(c)
 
     def __getitem__(self, index):
         if index >= len(self):
@@ -32,7 +32,20 @@ class OfficerListPage(Page):
             o = Officer(querier, **item)
 
             querier.cache.put_officer(o)
-            self._add_entity(o.officer_id)
+            self._add_entity(o)
+
+
+class AppointmentPage(Page):
+    def __init__(self, querier, search_results):
+        self.entities = []
+
+        for item in search_results:
+            num = item['appointed_to']['company_number']
+
+            c = querier.cache.retrieve_company(num) or querier.get_company(num)
+
+            querier.cache.put_company(c)
+            self._add_entity(c)
 
 
 class Search():
@@ -103,6 +116,27 @@ class Search():
 
         self.result_count = result_count
 
+class AppointmentList(Search):
+    def __init__(self, officer, querier):
+        self._PAGE_SIZE = 15
+
+        self.result_count = 0
+
+        self.officer = officer
+        self.querier = querier
+
+        self.pages = {}
+
+        self.iter_head = 0
+
+    def _get_upstream_page(self, page_number) -> Page:
+        logging.info('Requesting a new page of appointments from upstream')
+        
+        page, result_count = self.querier.get_appointment_list_page(self.officer.officer_id, self._PAGE_SIZE, self._PAGE_SIZE * page_number)
+
+        self._validate_result_count(result_count)
+
+        return page
 
 class OfficerList(Search):
     def __init__(self, company, querier):

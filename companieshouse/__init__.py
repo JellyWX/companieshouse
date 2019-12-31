@@ -4,7 +4,7 @@ from typing import Optional
 from pprint import pformat
 import logging
 
-from .search_result import Search, Page, OfficerListPage
+from .search_result import Search, Page, OfficerListPage, AppointmentPage
 from .cache import Cache
 
 __name__ = 'companieshouse'
@@ -31,6 +31,12 @@ class Routes():
         def Officers(c):
             return BASE_URI + '/company/{}/officers'.format(c)
 
+
+    class Officers():
+
+        @staticmethod
+        def Appointments(c):
+            return BASE_URI + '/officers/{}/appointments'.format(c)
 
 class InternalServerError(Exception):
     """Exception raised when a 500 error is received
@@ -165,18 +171,44 @@ class Querier():
 
             )
 
+    def get_appointment_list_page(self, officer_id: str, page_size: int=15, start_at: int=0) -> Optional[Page]:
+
+        def _handle_results(data) -> (Page, int):
+
+            search_results = data['items']
+
+            p = AppointmentPage(self, search_results)
+
+            return p, data['total_results']
+
+        return self._create_request(
+
+            '{}?start_index={}&items_per_page={}'.format(
+                Routes.Officers.Appointments(officer_id),
+                start_at,
+                page_size,
+                ),
+
+            _handle_results
+
+            )
+
     # Get more details regarding a company
-    def get_company(self, company_id):
+    def get_company(self, company_id) -> Company:
         """Internal use only: used to get a company object
 
         """
 
-        def _handle_results(data) -> None:
-            print(data)
+        def _handle_results(data) -> Company:
+            
+            c = Company(self, **data)
+
+            return c
 
         return self._create_request(
 
             Routes.Company.Get(company_id),
+
             _handle_results
 
             )
